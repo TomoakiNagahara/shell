@@ -41,49 +41,51 @@ switch( $os = PHP_OS ){
 
 //  ...
 $home .= $_SERVER['USER'].'/';
-$repo  = $home . 'repo/';
-$git   = $repo . 'temp.git';
-
-//  Check temp repository exists.
-if(!file_exists($git) ){
-    //  ...
-    if(!mkdir($git, 0755, true) ){
-        exit("Failed mkdir($repo, 0644, true)\n");
-    }
-    //  ...
-    if(!chdir($git)){
-        exit("Failed chdir($git)\n");
-    }
-    echo getcwd()."\n";
-    `git init --bare`;
-}
+$repo  = $home . '/repo/';
+$repo  = str_replace('//', '/', $repo);
 
 //  Create directory.
 foreach( $lists as $key => $list ){
     //  Create target path.
-    $path = $repo . "op/$key";
+    $path = "{$repo}/op/{$key}/";
+    $path = str_replace('//', '/', $path);
 
-    //  Check path exists.
+    //  ...
+    foreach( $list as $name ){
+        //  Add extension label.
+        $io = CreateGitRepository("{$path}{$name}.git");
+
+        echo $io ? 1:0;
+        echo "{$path}{$name}.git\n";
+    }
+}
+
+/** Create git repository.
+ *
+ * @param     string     $path
+ * @return    boolean    $io
+ */
+function CreateGitRepository(string $path){
+    //    Check if already created.
+    if( file_exists("{$path}/HEAD") ){
+        return true;
+    }
+
+    //  Check if path exists.
     if(!file_exists($path) ){
+        //    Make directory.
         mkdir($path, 0755, true);
     }
 
-    //  Change home directory.
+    //  Change directory.
     if(!chdir($path) ){
         exit("chdir was failed. ($path)");
     }
 
-    //  ...
-    foreach( $list as $name ){
-        //  Add extention label.
-        $name .= '.git';
-        //  ...
-        if( file_exists($name) ){
-            continue;
-        }
-        //  ...
-        copy($repo.'temp.git', './'.$name);
-    }
+    //    ...
+    echo 'non: '.getcwd()."\n";
+    `git init --bare`;
 
-    exit;
+    //    ...
+    return file_exists("{$path}/HEAD");
 }
